@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Parcel Sandbox</title>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="src/main.css">
+  </head>
+
+  <body>
+    <div id="app">
+      <div id="drop-area">
+        <form enctype="multipart/form-data">
+          <input
+            type="file"
+            name="file[]"
+            id="fileElem"
+            multiple directory nwdirectory allowdirs
+            onchange="handleFiles(this.files)"
+          />
+        </form>
+      </div>
+    </div>
+
+    <script src="src/index.js"></script>
+  </body>
+</html>
