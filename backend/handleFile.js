@@ -21,23 +21,36 @@ async function checkIfDirectoryExists(dirPath) {
   })
 }
 
-function createFile(uploadDir, path, contents) {  
-  fs.writeFile(uploadDir + path, contents, (err) => {
-    if (err) throw err
-    console.log('Created file: ' + path)
+function createFile(file, path) {  
+  file.mv('./uploads/' + path, (err) => {
+    if (err) console.log(err)
+    
+    console.log("created file: " + path)
   })
+  // fs.appendFile(uploadDir + path, contents, (err) => {
+  //   if (err) throw err
+  //   console.log('Created file: ' + path)
+  // })
 }
 
-function handleFile(file) {
-  const { contents, path } = file
+function handleFile(file, path) {
   const uploadDir = __dirname + '/uploads'
   const dirPath = getFileDirectory(uploadDir + path)
 
   return new Promise((resolve, reject) => {
     checkIfDirectoryExists(dirPath)
-      .then(resolve(createFile(uploadDir, path, contents)))
+      .then(resolve(createFile(file, path)))
       .catch(e => reject(e))
   })
+  // const { contents, path } = file
+  // const uploadDir = __dirname + '/uploads'
+  // const dirPath = getFileDirectory(uploadDir + path)
+
+  // return new Promise((resolve, reject) => {
+  //   checkIfDirectoryExists(dirPath)
+  //     .then(resolve(createFile(uploadDir, path, contents)))
+  //     .catch(e => reject(e))
+  // })
 }
 
 module.exports = handleFile 

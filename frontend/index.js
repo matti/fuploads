@@ -25,6 +25,28 @@ function unhighlight(e) {
   dropArea.classList.remove('highlight')
 }
 
+async function traverseFileTree(item, path) {
+  path = path || ""
+  if (item.isFile) {
+    files.push(item)
+  } else if (item.isDirectory) {
+    let dirReader = item.createReader()
+    dirReader.readEntries(entries => {
+      for (let i = 0; i < entries.length; i++) {
+        traverseFileTree(entries[i], path + item.name + "/")
+      }
+    })
+  }
+}
+
+async function convertToFile(fileEntry) {
+  try {
+    return await new Promise((resolve, reject) => fileEntry.file(resolve, reject))
+  } catch (err) {
+    console.log(err)
+  }
+}
+
 dropArea.addEventListener('drop', handleDrop, false)
 let files = []
 
@@ -48,51 +70,24 @@ function handleDrop(event) {
   }, 200)
 }
 
-function traverseFileTree(item, path) {
-  path = path || ""
-  if (item.isFile) {
-    files.push(item)
-  } else if (item.isDirectory) {
-    let dirReader = item.createReader()
-    dirReader.readEntries(entries => {
-      for (let i = 0; i < entries.length; i++) {
-        traverseFileTree(entries[i], path + item.name + "/")
-      }
-    })
-  }
-}
-
-function getContents(fileEntry) {
-  const reader = new FileReader()
-  
-  return new Promise((resolve, reject) => {
-    reader.onload = event => resolve(event.target.result)
-    reader.onerror = error => reject(error)
-    fileEntry.file(file => reader.readAsText(file))
-  })
-}
-
 async function uploadFiles(filesArray) {
+  console.log(filesArray)
   for(const file of filesArray) {
-    await sendFile({
-      "contents": await getContents(file),
-      "path": file.fullPath
-    })
-
-    delete file
+    const formData = new FormData();
+    formData.append("file", await convertToFile(file))
+    formData.append("path", file.fullPath)
+    await sendFile(formData)
   }
 }
 
-async function sendFile(file) {
-  console.log(file.path)
+async function sendFile(formData) {
   const url = 'http://localhost:8080/upload'
   const data = await fetch(url, {
     method: 'POST',
     headers: {
       'Accept': 'application/json, text/plain, */*',
-      'Content-Type': 'application/json'
     },
-    body: JSON.stringify(file)
+    body: formData
   })
 
   files = []
