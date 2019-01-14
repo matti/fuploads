@@ -4,6 +4,7 @@ const handleFile = require('./handleFile.js')
 const cors = require('cors')
 const fileUpload = require('express-fileupload')
 const app = express()
+const cluster = require("cluster")
 
 // middleware
 app.use(fileUpload())
@@ -11,24 +12,38 @@ app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(cors())
 
-app.post('/upload', (req, res) => {
-  if (Object.keys(req.files).length == 0) {
-    return res.status(400).send('Empty payload of files.')
+const numCPUs = require('os').cpus().length
+
+if (cluster.isMaster) {
+
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork()
   }
 
-  let file = req.files.file
-  let path = req.body.path
-  console.log(file)
+  cluster.on('exit', (worker, code, signal) => {
+    console.log('worker ' + worker.process.pid + ' died')
+  })
 
-  handleFile(file, path)
-    .then(() => {
-      res.send('Upload successful!')
-      res.end()
-    })
-    .catch(e => console.log(e))
-})
-
-const port = process.env.PORT || 8080
-app.listen(port, () => {
-  console.log('listening on ' + port)
-})
+} else {
+  app.post('/upload', (req, res) => {
+    if (Object.keys(req.files).length == 0) {
+      return res.status(200)
+    }
+  
+    let file = req.files.file
+    let path = req.body.path
+    console.log(file)
+  
+    handleFile(file, path)
+      .then(() => {
+        res.send('Upload successful!')
+        res.end()
+      })
+      .catch(e => console.log(e))
+  })
+  
+  const port = process.env.PORT || 8080
+  app.listen(port, () => {
+    console.log('listening on ' + port)
+  })
+}
