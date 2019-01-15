@@ -21,12 +21,20 @@ async function checkIfDirectoryExists(dirPath) {
   })
 }
 
-function createFile(file, path) {  
-  file.mv('./uploads/' + path, (err) => {
-    if (err) console.log(err)
-    
-    console.log("created file: " + path)
-  })
+function createFile(file, path) { 
+  if (file) {
+    file.mv('./uploads/' + path, (err) => {
+      if (err) console.log(err)
+      
+      console.log("created file: " + path)
+    })
+  } else {
+    // create empty file
+    fs.writeFile('./uploads/' + path, ' ', (err) => {
+      if (err) throw err
+      console.log("create empty file: " + path)
+    })
+  }
 }
 
 function handleFile(file, path) {
