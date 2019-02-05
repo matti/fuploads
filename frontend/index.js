@@ -25,18 +25,66 @@ function unhighlight(e) {
   dropArea.classList.remove('highlight')
 }
 
-async function traverseFileTree(item, path) {
-  path = path || ""
-  if (item.isFile) {
-    files.push(item)
-  } else if (item.isDirectory) {
-    let dirReader = item.createReader()
-    dirReader.readEntries(entries => {
-      for (let i = 0; i < entries.length; i++) {
-        traverseFileTree(entries[i], path + item.name + "/")
-      }
-    })
+// Drop handler function to get all files
+async function getAllFileEntries(dataTransferItemList) {
+  let fileEntries = [];
+  // Use BFS to traverse entire directory/file structure
+  let queue = [];
+  // Unfortunately dataTransferItemList is not iterable i.e. no forEach
+  for (let i = 0; i < dataTransferItemList.length; i++) {
+    queue.push(dataTransferItemList[i].webkitGetAsEntry());
   }
+  while (queue.length > 0) {
+    let entry = queue.shift();
+    if (entry.isFile) {
+      fileEntries.push(entry);
+    } else if (entry.isDirectory) {
+      let reader = entry.createReader();
+      queue.push(...await readAllDirectoryEntries(reader));
+    }
+  }
+  return fileEntries;
+}
+
+// Get all the entries (files or sub-directories) in a directory by calling readEntries until it returns empty array
+async function readAllDirectoryEntries(directoryReader) {
+  let entries = [];
+  let readEntries = await readEntriesPromise(directoryReader);
+  while (readEntries.length > 0) {
+    entries.push(...readEntries);
+    readEntries = await readEntriesPromise(directoryReader);
+  }
+  return entries;
+}
+
+// Wrap readEntries in a promise to make working with readEntries easier
+async function readEntriesPromise(directoryReader) {
+  try {
+    return await new Promise((resolve, reject) => {
+      directoryReader.readEntries(resolve, reject);
+    });
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+dropArea.addEventListener('drop', handleDrop, false)
+let sending = false
+let files = []
+
+async function handleDrop(event) {
+  if (sending === true) {
+    return;
+  }
+
+  sending = true
+  document.querySelector('#text').innerText = "Uploading..."
+  const items = event.dataTransfer.items
+  
+  getAllFileEntries(items).then((files) => {
+    console.log(files)
+    uploadFiles(files)
+  })
 }
 
 async function convertToFile(fileEntry) {
@@ -47,37 +95,23 @@ async function convertToFile(fileEntry) {
   }
 }
 
-dropArea.addEventListener('drop', handleDrop, false)
-let files = []
-
-function handleDrop(event) {
-  files = []
-  const items = event.dataTransfer.items
-
-  for (let i = 0; i < items.length; i++) {
-    let item = items[i].webkitGetAsEntry()
-    if (item) {
-      traverseFileTree(item)
-    }
-  }
-
-  const timeout = setInterval(() => {
-    if (files.length >= 1) {
-      const filteredFiles = files.filter(file => !file.name.includes(".DS_Store"))
-      uploadFiles(filteredFiles)
-      clearInterval(timeout)
-    }
-  }, 200)
-}
-
 async function uploadFiles(filesArray) {
-  console.log(filesArray)
-  for(const file of filesArray) {
-    const formData = new FormData();
+  const promises = filesArray.map(async function(file) {
+    const formData = new FormData()
     formData.append("file", await convertToFile(file))
     formData.append("path", file.fullPath)
-    await sendFile(formData)
-  }
+    return sendFile(formData)
+  })
+
+  Promise
+    .all(promises)
+    .then(() => {
+      document.querySelector('#text').innerText = "Finished ✅"
+      setTimeout(() => {
+        sending = false
+        document.querySelector('#text').innerText = "Drop your files here"
+      }, 2000)
+    })
 }
 
 async function sendFile(formData) {
@@ -89,8 +123,7 @@ async function sendFile(formData) {
     },
     body: formData
   })
-
-  files = []
+  
   const response = await data.text()
   console.log(response)
   return response

@@ -25,7 +25,6 @@ function createFile(file, path) {
   if (file) {
     file.mv('./uploads/' + path, (err) => {
       if (err) console.log(err)
-      
       console.log("created file: " + path)
     })
   } else {
