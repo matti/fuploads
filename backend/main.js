@@ -5,13 +5,8 @@ const cors = require('cors')
 const fileUpload = require('express-fileupload')
 const handleFile = require('./handleFile.js')
 
-function handleError(error) {
-  console.log(error)
-  process.exit(0)
-}
-
 // middleware
-app.use(fileUpload())
+app.use(fileUpload({ limits: { fileSize: 99999999999999 }}))
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(cors())

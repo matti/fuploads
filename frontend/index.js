@@ -27,44 +27,44 @@ function unhighlight(e) {
 
 // Drop handler function to get all files
 async function getAllFileEntries(dataTransferItemList) {
-  let fileEntries = [];
+  let fileEntries = []
   // Use BFS to traverse entire directory/file structure
-  let queue = [];
+  let queue = []
   // Unfortunately dataTransferItemList is not iterable i.e. no forEach
   for (let i = 0; i < dataTransferItemList.length; i++) {
-    queue.push(dataTransferItemList[i].webkitGetAsEntry());
+    queue.push(dataTransferItemList[i].webkitGetAsEntry())
   }
   while (queue.length > 0) {
-    let entry = queue.shift();
+    let entry = queue.shift()
     if (entry.isFile) {
-      fileEntries.push(entry);
+      fileEntries.push(entry)
     } else if (entry.isDirectory) {
-      let reader = entry.createReader();
-      queue.push(...await readAllDirectoryEntries(reader));
+      let reader = entry.createReader()
+      queue.push(...await readAllDirectoryEntries(reader))
     }
   }
-  return fileEntries;
+  return fileEntries
 }
 
 // Get all the entries (files or sub-directories) in a directory by calling readEntries until it returns empty array
 async function readAllDirectoryEntries(directoryReader) {
-  let entries = [];
-  let readEntries = await readEntriesPromise(directoryReader);
+  let entries = []
+  let readEntries = await readEntriesPromise(directoryReader)
   while (readEntries.length > 0) {
-    entries.push(...readEntries);
-    readEntries = await readEntriesPromise(directoryReader);
+    entries.push(...readEntries)
+    readEntries = await readEntriesPromise(directoryReader)
   }
-  return entries;
+  return entries
 }
 
 // Wrap readEntries in a promise to make working with readEntries easier
 async function readEntriesPromise(directoryReader) {
   try {
     return await new Promise((resolve, reject) => {
-      directoryReader.readEntries(resolve, reject);
+      directoryReader.readEntries(resolve, reject)
     });
   } catch (err) {
-    console.log(err);
+    console.log(err)
   }
 }
 
@@ -95,37 +95,61 @@ async function convertToFile(fileEntry) {
   }
 }
 
+async function sendFile(formData) {
+  const url = 'http://localhost:8080/upload'
+  try {
+    const data = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json, text/plain, */*',
+      },
+      body: formData
+    })
+    
+    const response = await data.text()
+    console.log(response)
+    return response
+  } catch(e) {
+    return e
+  }
+}
+
+function requestsFinished() {
+  document.querySelector('#text').innerText = "Finished ✅"
+  setTimeout(() => {
+    sending = false
+    document.querySelector('#text').innerText = "Drop your files here"
+  }, 2000)
+}
+
 async function uploadFiles(filesArray) {
-  const promises = filesArray.map(async function(file) {
+  const promises = filesArray.map(async function(fileEntry) {
     const formData = new FormData()
-    formData.append("file", await convertToFile(file))
-    formData.append("path", file.fullPath)
+    formData.append("file", await convertToFile(fileEntry))
+    formData.append("path", fileEntry.fullPath)
     return sendFile(formData)
   })
 
-  Promise
-    .all(promises)
-    .then(() => {
-      document.querySelector('#text').innerText = "Finished ✅"
-      setTimeout(() => {
-        sending = false
-        document.querySelector('#text').innerText = "Drop your files here"
-      }, 2000)
-    })
-}
-
-async function sendFile(formData) {
-  const url = 'http://localhost:8080/upload'
-  const data = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json, text/plain, */*',
-    },
-    body: formData
+  /*
+    Sequentially send each request
+  */  
+  promises.reduce((promiseChain, currentTask) => {
+    return promiseChain.then(chainResults =>
+      currentTask.then(currentResult =>
+        [ ...chainResults, currentResult ]
+      )
+    )
+  }, Promise.resolve([])).then(arrayOfResults => {
+    console.log(arrayOfResults)
+    requestsFinished()
   })
-  
-  const response = await data.text()
-  console.log(response)
-  return response
-}
 
+  /*
+    Send all requests in parallel => chrome max active requests ~6 
+  */
+  // Promise
+  //   .all(promises)
+  //   .then(() => {
+  //     requestsFinished()
+  //   })
+}
