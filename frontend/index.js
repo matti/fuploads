@@ -69,9 +69,9 @@ async function readEntriesPromise(directoryReader) {
 
 dropArea.addEventListener("drop", handleDrop, false);
 let sending = false;
-let files = [];
 
 async function handleDrop(event) {
+  let files = [];
   if (sending === true) {
     return;
   }
@@ -80,10 +80,8 @@ async function handleDrop(event) {
   document.querySelector("#text").innerText = "Uploading...";
   const items = event.dataTransfer.items;
 
-  getAllFileEntries(items).then(files => {
-    console.log(files);
-    uploadFiles(files);
-  });
+  getAllFileEntries(items)
+    .then(files => uploadFiles(files))
 }
 
 async function convertToFile(fileEntry) {
@@ -106,7 +104,7 @@ function requestsFinished() {
 
 function chunkArray(myArray, chunk_size) {
   let results = [];
-  let len = Math.ceil(myArray.length / chunk_size)
+  let len = Math.ceil(myArray.length / chunk_size);
 
   while (myArray.length) {
     results.push(myArray.splice(0, len));
@@ -115,21 +113,19 @@ function chunkArray(myArray, chunk_size) {
   return results;
 }
 
+function computeNumberOfWorkers(numberOfFiles) {
+  return Math.round(0.01 * numberOfFiles + 1);
+}
+
 async function uploadFiles(filesArray) {
   let worker = [];
+  let requestDoneCounter = 0;
 
   if (typeof Worker !== undefined) {
-    workers = [
-      new Worker("worker.js"),
-      new Worker("worker.js"),
-      new Worker("worker.js"),
-      new Worker("worker.js"),
-      new Worker("worker.js"),
-      new Worker("worker.js"),
-      new Worker("worker.js"),
-      new Worker("worker.js"),
-      new Worker("worker.js")
-    ];
+    let arrayOfWorkers = Array(computeNumberOfWorkers(filesArray.length)).fill(null);
+    workers = arrayOfWorkers.map(_ => new Worker("worker.js"));
+
+    console.log(workers.length + " active workers.");
 
     Promise.all(
       filesArray.map(async fileEntry => {
@@ -148,48 +144,20 @@ async function uploadFiles(filesArray) {
       })
       .catch(console.log);
 
-    // filesArray.map(async (fileEntry) => worker.postMessage(await convertToFile(fileEntry)))
-
     workers.forEach(worker => {
       worker.onmessage = function(msg) {
-        if (msg.data === "done") requestsFinished();
+        if (msg.data === "done") {
+          requestDoneCounter++;
+
+          if (requestDoneCounter == workers.length) {
+            workers.forEach(worker => worker.terminate())
+            requestsFinished()
+            requestDoneCounter = 0;
+          }
+        }
       };
 
-      worker.onerror = function(err) {
-        console.log(err);
-      };
+      worker.onerror = console.log;
     });
   }
-
-  // setInterval(() => {
-  //   if (formData.length > 0) {
-  //     formData
-  //       .shift()
-  //       .then(formData => sendFile(formData))
-  //       .catch(console.log)
-  //   }
-  // }, 10)
-
-  /*
-    Sequentially send each request
-  */
-  // promises.reduce((promiseChain, currentTask) => {
-  //   return promiseChain.then(chainResults =>
-  //     currentTask.then(currentResult => {
-  //       return [ ...chainResults, currentResult ]
-  //     })
-  //   )
-  // }, Promise.resolve([])).then(arrayOfResults => {
-  //   console.log(arrayOfResults)
-  //   requestsFinished()
-  // })
-
-  /*
-    Send all requests in parallel => chrome max active requests ~6 
-  */
-  // Promise
-  //   .all(promises)
-  //   .then(() => {
-  //     requestsFinished()
-  //   })
 }

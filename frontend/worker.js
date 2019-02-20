@@ -1,20 +1,23 @@
-self.addEventListener("message", async ({ data }) => {
+self.addEventListener("message", handleMessage, false)
+
+async function handleMessage({ data }) {
   console.log(data)
 
   while(data.length !== 0) {
-    let file = data.shift()
     try {
-      await sendFile(createFormData(file))
+      let file = data.shift()
+      let formData = createFormData(file)
+      await sendFile(formData)
     } catch (e) {
       console.error(e)
     } 
 
+    // all files have been sent
     if (data.length === 0) {
       self.postMessage("done")
     }
   }
-  // Promise.all(data.map(async (file) => await sendFile(createFormData(data))))
-}, false)
+}
 
 function createFormData(file) {
   const form = new FormData()
@@ -34,6 +37,5 @@ async function sendFile(formData) {
   })
   
   const response = await data.text()
-  console.log(response)
   return await response
 }
