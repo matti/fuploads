@@ -1,10 +1,10 @@
-const fs = require('fs')
-const mkdirp = require('mkdirp')
+const fs = require("fs")
+const mkdirp = require("mkdirp")
 
 function getFileDirectory(path) {
-  const directory = path.split('/')
+  const directory = path.split("/")
   directory.splice(-1,1)
-  return directory.join('/')
+  return directory.join("/")
 }
 
 async function checkIfDirectoryExists(dirPath) {
@@ -12,7 +12,7 @@ async function checkIfDirectoryExists(dirPath) {
     if (!fs.existsSync(dirPath)){
       mkdirp.sync(dirPath, (err) => {
         if (err) reject(err)
-        console.log('Created directory: ' + dirPath)
+        console.log("Created directory: " + dirPath)
         resolve(dirPath)
       })
 
@@ -23,13 +23,13 @@ async function checkIfDirectoryExists(dirPath) {
 
 function createFile(file, path) { 
   if (file) {
-    file.mv('./uploads/' + path, (err) => {
+    file.mv("./uploads/" + path, (err) => {
       if (err) console.log(err)
       console.log("created file: " + path)
     })
   } else {
     // create empty file
-    fs.writeFile('./uploads/' + path, ' ', (err) => {
+    fs.writeFile("./uploads/" + path, " ", (err) => {
       if (err) throw err
       console.log("create empty file: " + path)
     })
@@ -37,7 +37,7 @@ function createFile(file, path) {
 }
 
 function handleFile(file, path) {
-  const uploadDir = __dirname + '/uploads'
+  const uploadDir = __dirname + "/uploads"
   const dirPath = getFileDirectory(uploadDir + path)
 
   return new Promise((resolve, reject) => {
