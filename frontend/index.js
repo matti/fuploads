@@ -16,11 +16,11 @@ function preventDefaults(e) {
   dropArea.addEventListener(eventName, unhighlight, false);
 });
 
-function highlight(e) {
+function highlight() {
   dropArea.classList.add("highlight");
 }
 
-function unhighlight(e) {
+function unhighlight() {
   dropArea.classList.remove("highlight");
 }
 
@@ -71,7 +71,6 @@ dropArea.addEventListener("drop", handleDrop, false);
 let sending = false;
 
 async function handleDrop(event) {
-  let files = [];
   if (sending === true) {
     return;
   }
@@ -80,8 +79,7 @@ async function handleDrop(event) {
   document.querySelector("#text").innerText = "Uploading...";
   const items = event.dataTransfer.items;
 
-  getAllFileEntries(items)
-    .then(files => uploadFiles(files))
+  getAllFileEntries(items).then(files => uploadFiles(files));
 }
 
 async function convertToFile(fileEntry) {
@@ -118,13 +116,14 @@ function computeNumberOfWorkers(numberOfFiles) {
 }
 
 async function uploadFiles(filesArray) {
-  let worker = [];
   let requestDoneCounter = 0;
 
   if (typeof Worker !== undefined) {
-    let arrayOfWorkers = Array(computeNumberOfWorkers(filesArray.length)).fill(null);
-    workers = arrayOfWorkers.map(_ => new Worker("worker.js"));
+    let workers = Array(computeNumberOfWorkers(filesArray.length)).fill(
+      new Worker("worker.js")
+    );
 
+    console.log(filesArray.length + " files uploading.");
     console.log(workers.length + " active workers.");
 
     Promise.all(
@@ -150,8 +149,8 @@ async function uploadFiles(filesArray) {
           requestDoneCounter++;
 
           if (requestDoneCounter == workers.length) {
-            workers.forEach(worker => worker.terminate())
-            requestsFinished()
+            workers.forEach(worker => worker.terminate());
+            requestsFinished();
             requestDoneCounter = 0;
           }
         }

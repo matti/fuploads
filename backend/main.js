@@ -20,7 +20,9 @@ app.use(function(req, res, next) {
   next();
 });
 
-app.get("/ping", () => res.send("pong!"));
+app.get("/ping", (req, res) => {
+  res.send("pong!");
+});
 
 app.post("/upload", (req, res) => {
   let file = req.files.file;
