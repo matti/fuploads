@@ -25,8 +25,7 @@ function createFormData(file) {
 }
 
 async function sendFile(formData) {
-  // const url = "http://localhost:8080/upload";
-  const url = "http://35.228.13.201/upload";
+  const url = "/upload";
   const data = await fetch(url, {
     method: "POST",
     headers: {
