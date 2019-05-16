@@ -1,7 +1,6 @@
 const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
-const cors = require("cors");
 const fileUpload = require("express-fileupload");
 const handleFile = require("./handleFile.js");
 
@@ -9,17 +8,7 @@ const handleFile = require("./handleFile.js");
 app.use(fileUpload({ limits: { fileSize: 99999999999999 } }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cors());
 app.use(express.static('public'));
-
-app.use(function (req, res, next) {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept"
-  );
-  next();
-});
 
 app.get("/ping", (req, res) => {
   res.send("pong!");
