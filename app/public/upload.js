@@ -79,7 +79,8 @@ async function handleDrop(event) {
   document.querySelector("#text").innerText = "Uploading...";
   const items = event.dataTransfer.items;
 
-  getAllFileEntries(items).then(files => uploadFiles(files));
+  getAllFileEntries(items)
+    .then(files => uploadFiles(files))
 }
 
 async function convertToFile(fileEntry) {
@@ -152,6 +153,10 @@ async function uploadFiles(filesArray) {
             workers.forEach(worker => worker.terminate());
             requestsFinished();
             requestDoneCounter = 0;
+
+            // let file tree know when to recreate new structure 
+            const fileUploadEvent = new CustomEvent("fileupload")
+            window.dispatchEvent(fileUploadEvent);
           }
         }
       };

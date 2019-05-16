@@ -1,4 +1,7 @@
 const express = require("express");
+const fs = require('fs')
+const path = require('path')
+const dirTree = require("directory-tree");
 const app = express();
 const bodyParser = require("body-parser");
 const fileUpload = require("express-fileupload");
@@ -26,6 +29,30 @@ app.post("/upload", (req, res) => {
     })
     .catch(console.log);
 });
+
+app.get('/files', (req, res) => {
+  const read = (dir) =>
+    fs.readdirSync(dir)
+      .reduce((files, file) =>
+        fs.statSync(path.join(dir, file)).isDirectory() ?
+          files.concat(read(path.join(dir, file))) :
+          files.concat(path.join(dir, file)),
+        []);
+        
+  const tree = read('./uploads')
+  res.json(tree)
+  res.end()
+})
+
+app.delete('/file', (req, res) => {
+  let fileName = req.body.name
+  try {
+    fs.unlinkSync(fileName)
+    res.send('Deleted')
+  } catch(err) {
+    console.error(err)
+  }
+})
 
 const port = process.env.PORT || 8080;
 app.listen(port, () => {

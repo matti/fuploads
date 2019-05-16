@@ -25,15 +25,20 @@ function createFormData(file) {
 }
 
 async function sendFile(formData) {
-  const url = "/upload";
-  const data = await fetch(url, {
-    method: "POST",
-    headers: {
-      Accept: "application/json, text/plain, */*"
-    },
-    body: formData
-  });
+  try {
+    const url = "/upload";
+    const data = await fetch(url, {
+      method: "POST",
+      headers: {
+        Accept: "application/json, text/plain, */*"
+      },
+      body: formData
+    });
 
-  const response = await data.text();
-  return await response;
+    const response = await data.text();
+    return await response;
+    
+  } catch(e) {
+    console.error(e)
+  }
 }
