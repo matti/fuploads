@@ -1,7 +1,6 @@
 const express = require("express");
 const fs = require('fs')
 const path = require('path')
-const dirTree = require("directory-tree");
 const app = express();
 const bodyParser = require("body-parser");
 const fileUpload = require("express-fileupload");
