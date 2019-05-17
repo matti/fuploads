@@ -24,11 +24,17 @@ async function deleteFile(e) {
 async function createTreeView() {
   const fileTree = await getFileTree()
   const fileList = document.querySelector('#file-structure')
-  const listElems = fileTree.map(fileName => {
-    return `<li data-name="${fileName}">
-      <span class="filename">${fileName}</span>
-      <span class="delete">❌</span>
-    </li>`
+  const indent = (depth) => (depth * 10).toString() + 'px'
+  const listElems = fileTree.map(obj => {
+    console.log(obj.name, obj.depth)
+    return `
+      <li data-name="${obj.name}" 
+          style="text-indent: ${indent(obj.depth)};
+          font-weight: ${obj.type == 'directory' ? 'bold' : 'normal'}"
+      >
+        <span class="filename">${obj.name}</span>
+        <span class="delete">❌</span>
+      </li>`
   })
   fileList.innerHTML = `<ul>${listElems.join('')}</ul>`
 
