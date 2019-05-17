@@ -26,7 +26,6 @@ async function createTreeView() {
   const fileList = document.querySelector('#file-structure')
   const indent = (depth) => (depth * 10).toString() + 'px'
   const listElems = fileTree.map(obj => {
-    console.log(obj.name, obj.depth)
     return `
       <li data-name="${obj.name}" 
           style="text-indent: ${indent(obj.depth)};
