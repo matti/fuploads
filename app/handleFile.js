@@ -49,7 +49,7 @@ function handleFile(file, path) {
   })
 }
 
-async function getAllFiles(dir, filelist = []) {
+async function getAllFiles(dir, filelist = [], depth=0) {
   const files = await promiseFS.readdir(dir);
 
   for (file of files) {
@@ -57,10 +57,19 @@ async function getAllFiles(dir, filelist = []) {
     const stat = await promiseFS.stat(filepath);
 
     if (stat.isDirectory()) {
-      filelist.push(filepath.replace('uploads/', '')) // directory
-      filelist = await getAllFiles(filepath, filelist);
+      filelist.push({ 
+        'type': 'directory', 
+        'depth': depth,
+        'name': filepath.replace('uploads/', '') // directory
+      })
+      depth++
+      filelist = await getAllFiles(filepath, filelist, depth);
     } else {
-      filelist.push(filepath.replace('uploads/', ''));
+      filelist.push({
+        'type': 'file',
+        'depth': depth,
+        'name': filepath.replace('uploads/', '')
+      })
     }
   }
   return filelist;
