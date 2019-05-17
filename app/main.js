@@ -1,10 +1,12 @@
 const express = require("express");
-const fs = require('fs')
-const path = require('path')
 const app = express();
+const del = require('del');
 const bodyParser = require("body-parser");
 const fileUpload = require("express-fileupload");
-const handleFile = require("./handleFile.js");
+const { 
+  handleFile, 
+  getAllFiles
+} = require("./handleFile.js");
 
 // middleware
 app.use(fileUpload({ limits: { fileSize: 99999999999999 } }));
@@ -30,27 +32,15 @@ app.post("/upload", (req, res) => {
 });
 
 app.get('/files', (req, res) => {
-  const read = (dir) =>
-    fs.readdirSync(dir)
-      .reduce((files, file) =>
-        fs.statSync(path.join(dir, file)).isDirectory() ?
-          files.concat(read(path.join(dir, file))) :
-          files.concat(path.join(dir, file)),
-        []);
-        
-  const tree = read('./uploads')
-  res.json(tree)
-  res.end()
+  getAllFiles('uploads')
+    .then(files => res.json(files))
+    .catch(console.log)
 })
 
-app.delete('/file', (req, res) => {
-  let fileName = req.body.name
-  try {
-    fs.unlinkSync(fileName)
-    res.send('Deleted')
-  } catch(err) {
-    console.error(err)
-  }
+app.delete('/file', async (req, res) => {
+  let folderOrFileName = './uploads/' + req.body.name
+  const deletedPaths = await del([folderOrFileName]);
+  res.send('Deleted')
 })
 
 const port = process.env.PORT || 8080;

@@ -1,4 +1,6 @@
 const fs = require("fs")
+const path = require('path')
+const promiseFS = require('fs').promises
 const mkdirp = require("mkdirp")
 
 function getFileDirectory(path) {
@@ -47,4 +49,24 @@ function handleFile(file, path) {
   })
 }
 
-module.exports = handleFile 
+async function getAllFiles(dir, filelist = []) {
+  const files = await promiseFS.readdir(dir);
+
+  for (file of files) {
+    const filepath = path.join(dir, file);
+    const stat = await promiseFS.stat(filepath);
+
+    if (stat.isDirectory()) {
+      filelist.push(filepath.replace('uploads/', '')) // directory
+      filelist = await getAllFiles(filepath, filelist);
+    } else {
+      filelist.push(filepath.replace('uploads/', ''));
+    }
+  }
+  return filelist;
+}
+
+module.exports = {
+  handleFile,
+  getAllFiles
+}
